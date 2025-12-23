@@ -1,0 +1,34 @@
+{
+  "tests": [
+    {
+      "name": "Get all bookings",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "bookings": "array"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Create new booking",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "roomId": 1,
+        "checkIn": "2024-12-25",
+        "checkOut": "2024-12-28",
+        "guestsCount": 2,
+        "guestName": "Test User",
+        "guestEmail": "test@example.com",
+        "guestPhone": "+7 999 123-45-67"
+      },
+      "expectedStatus": 201,
+      "expectedBody": {
+        "message": "string",
+        "bookingId": "number"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

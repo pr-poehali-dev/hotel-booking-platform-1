@@ -1,44 +1,34 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
 import { Link } from 'react-router-dom';
+import { api } from '@/lib/api';
 
 const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [rooms, setRooms] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const rooms = [
-    {
-      id: 1,
-      name: 'Стандартный номер',
-      category: 'standard',
-      price: 8500,
-      image: 'https://cdn.poehali.dev/projects/6e378c01-4a59-4b8f-b497-69d8bbb08df0/files/98c79f78-ce18-4cf5-98f4-1e859ef3799c.jpg',
-      features: ['2 гостя', 'Wi-Fi', 'Завтрак'],
-    },
-    {
-      id: 2,
-      name: 'Люкс',
-      category: 'lux',
-      price: 15000,
-      image: 'https://cdn.poehali.dev/projects/6e378c01-4a59-4b8f-b497-69d8bbb08df0/files/98c79f78-ce18-4cf5-98f4-1e859ef3799c.jpg',
-      features: ['4 гостя', 'Wi-Fi', 'Завтрак', 'Джакузи'],
-    },
-    {
-      id: 3,
-      name: 'Президентский люкс',
-      category: 'premium',
-      price: 35000,
-      image: 'https://cdn.poehali.dev/projects/6e378c01-4a59-4b8f-b497-69d8bbb08df0/files/98c79f78-ce18-4cf5-98f4-1e859ef3799c.jpg',
-      features: ['6 гостей', 'Wi-Fi', 'Завтрак', 'Джакузи', 'Терраса'],
-    },
-  ];
+  useEffect(() => {
+    const fetchRooms = async () => {
+      try {
+        setLoading(true);
+        const data = await api.getRooms(selectedCategory);
+        setRooms(data.rooms.slice(0, 3));
+      } catch (error) {
+        console.error('Failed to fetch rooms:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const filteredRooms = selectedCategory === 'all' 
-    ? rooms 
-    : rooms.filter(room => room.category === selectedCategory);
+    fetchRooms();
+  }, [selectedCategory]);
+
+  const filteredRooms = rooms;
 
   return (
     <Layout>
@@ -137,41 +127,53 @@ const Index = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {filteredRooms.map((room, index) => (
-              <Card key={room.id} className="overflow-hidden hover:shadow-xl transition-all hover:scale-105 animate-fade-in" style={{ animationDelay: `${index * 100}ms` }}>
-                <div className="relative h-64 overflow-hidden">
-                  <img 
-                    src={room.image} 
-                    alt={room.name} 
-                    className="w-full h-full object-cover transition-transform hover:scale-110"
-                  />
-                  <Badge className="absolute top-4 right-4">
-                    {room.category === 'standard' ? 'Стандарт' : room.category === 'lux' ? 'Люкс' : 'Премиум'}
-                  </Badge>
-                </div>
-                <CardContent className="p-6">
-                  <h3 className="text-2xl font-bold mb-2">{room.name}</h3>
-                  <div className="flex items-center gap-2 mb-4">
-                    {room.features.map((feature, idx) => (
-                      <Badge key={idx} variant="secondary" className="text-xs">
-                        {feature}
-                      </Badge>
-                    ))}
+            {loading ? (
+              <div className="col-span-3 text-center py-12">
+                <Icon name="Loader2" size={48} className="mx-auto animate-spin text-primary mb-4" />
+                <p className="text-muted-foreground">Загрузка номеров...</p>
+              </div>
+            ) : filteredRooms.length === 0 ? (
+              <div className="col-span-3 text-center py-12">
+                <Icon name="BedDouble" size={48} className="mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">Номера не найдены</p>
+              </div>
+            ) : (
+              filteredRooms.map((room, index) => (
+                <Card key={room.id} className="overflow-hidden hover:shadow-xl transition-all hover:scale-105 animate-fade-in" style={{ animationDelay: `${index * 100}ms` }}>
+                  <div className="relative h-64 overflow-hidden">
+                    <img 
+                      src={room.image} 
+                      alt={room.name} 
+                      className="w-full h-full object-cover transition-transform hover:scale-110"
+                    />
+                    <Badge className="absolute top-4 right-4">
+                      {room.category === 'standard' ? 'Стандарт' : room.category === 'lux' ? 'Люкс' : 'Премиум'}
+                    </Badge>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-3xl font-bold text-primary">{room.price}₽</span>
-                      <span className="text-muted-foreground text-sm ml-1">/ночь</span>
+                  <CardContent className="p-6">
+                    <h3 className="text-2xl font-bold mb-2">{room.name}</h3>
+                    <div className="flex items-center gap-2 mb-4">
+                      {room.features.slice(0, 3).map((feature: string, idx: number) => (
+                        <Badge key={idx} variant="secondary" className="text-xs">
+                          {feature}
+                        </Badge>
+                      ))}
                     </div>
-                    <Link to="/booking">
-                      <Button>
-                        Забронировать
-                      </Button>
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-3xl font-bold text-primary">{room.price}₽</span>
+                        <span className="text-muted-foreground text-sm ml-1">/ночь</span>
+                      </div>
+                      <Link to="/booking">
+                        <Button>
+                          Забронировать
+                        </Button>
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </div>
         </div>
       </section>

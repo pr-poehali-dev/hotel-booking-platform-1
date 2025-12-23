@@ -1,0 +1,26 @@
+{
+  "tests": [
+    {
+      "name": "Get admin stats",
+      "method": "GET",
+      "path": "/stats",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "totalRooms": "number",
+        "availableRooms": "number",
+        "revenue": "number"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Get all rooms for admin",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "rooms": "array"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

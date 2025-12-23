@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +12,7 @@ import Icon from '@/components/ui/icon';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { api } from '@/lib/api';
 
 const Booking = () => {
   const [checkIn, setCheckIn] = useState<Date>();
@@ -21,15 +22,20 @@ const Booking = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [rooms, setRooms] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const rooms = [
-    { id: '1', name: 'Стандартный номер', price: 8500 },
-    { id: '2', name: 'Улучшенный стандарт', price: 11000 },
-    { id: '3', name: 'Делюкс', price: 15000 },
-    { id: '4', name: 'Семейный люкс', price: 18000 },
-    { id: '5', name: 'Президентский люкс', price: 35000 },
-    { id: '6', name: 'Пентхаус', price: 50000 },
-  ];
+  useEffect(() => {
+    const fetchRooms = async () => {
+      try {
+        const data = await api.getRooms();
+        setRooms(data.rooms.map((r: any) => ({ id: r.id.toString(), name: r.name, price: r.price })));
+      } catch (error) {
+        console.error('Failed to fetch rooms:', error);
+      }
+    };
+    fetchRooms();
+  }, []);
 
   const calculateNights = () => {
     if (checkIn && checkOut) {
@@ -47,23 +53,41 @@ const Booking = () => {
     return 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!checkIn || !checkOut || !selectedRoom || !name || !email || !phone) {
-      toast.error('Пожалуйста, заполните все поля');
+    if (!checkIn || !checkOut || !selectedRoom || !name || !email) {
+      toast.error('Пожалуйста, заполните все обязательные поля');
       return;
     }
 
-    toast.success('Бронирование успешно создано! Мы свяжемся с вами в ближайшее время.');
-    
-    setCheckIn(undefined);
-    setCheckOut(undefined);
-    setSelectedRoom('');
-    setGuests('2');
-    setName('');
-    setEmail('');
-    setPhone('');
+    try {
+      setLoading(true);
+      await api.createBooking({
+        roomId: parseInt(selectedRoom),
+        checkIn: checkIn.toISOString().split('T')[0],
+        checkOut: checkOut.toISOString().split('T')[0],
+        guestsCount: parseInt(guests),
+        guestName: name,
+        guestEmail: email,
+        guestPhone: phone,
+      });
+
+      toast.success('Бронирование успешно создано! Мы свяжемся с вами в ближайшее время.');
+      
+      setCheckIn(undefined);
+      setCheckOut(undefined);
+      setSelectedRoom('');
+      setGuests('2');
+      setName('');
+      setEmail('');
+      setPhone('');
+    } catch (error) {
+      toast.error('Ошибка при создании бронирования');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -209,9 +233,18 @@ const Booking = () => {
                     </div>
                   </div>
 
-                  <Button type="submit" size="lg" className="w-full">
-                    <Icon name="CheckCircle" size={20} className="mr-2" />
-                    Подтвердить бронирование
+                  <Button type="submit" size="lg" className="w-full" disabled={loading}>
+                    {loading ? (
+                      <>
+                        <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
+                        Создание...
+                      </>
+                    ) : (
+                      <>
+                        <Icon name="CheckCircle" size={20} className="mr-2" />
+                        Подтвердить бронирование
+                      </>
+                    )}
                   </Button>
                 </form>
               </CardContent>

@@ -1,86 +1,34 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
 import { Link } from 'react-router-dom';
+import { api } from '@/lib/api';
 
 const Rooms = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [rooms, setRooms] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const rooms = [
-    {
-      id: 1,
-      name: 'Стандартный номер',
-      category: 'standard',
-      price: 8500,
-      image: 'https://cdn.poehali.dev/projects/6e378c01-4a59-4b8f-b497-69d8bbb08df0/files/98c79f78-ce18-4cf5-98f4-1e859ef3799c.jpg',
-      area: 25,
-      guests: 2,
-      features: ['Wi-Fi', 'Кондиционер', 'Телевизор', 'Минибар', 'Завтрак'],
-      description: 'Уютный номер с современным дизайном и всеми необходимыми удобствами для комфортного проживания.',
-    },
-    {
-      id: 2,
-      name: 'Улучшенный стандарт',
-      category: 'standard',
-      price: 11000,
-      image: 'https://cdn.poehali.dev/projects/6e378c01-4a59-4b8f-b497-69d8bbb08df0/files/98c79f78-ce18-4cf5-98f4-1e859ef3799c.jpg',
-      area: 30,
-      guests: 2,
-      features: ['Wi-Fi', 'Кондиционер', 'Телевизор', 'Минибар', 'Завтрак', 'Вид на город'],
-      description: 'Просторный номер с прекрасным видом на город и дополнительными удобствами.',
-    },
-    {
-      id: 3,
-      name: 'Делюкс',
-      category: 'lux',
-      price: 15000,
-      image: 'https://cdn.poehali.dev/projects/6e378c01-4a59-4b8f-b497-69d8bbb08df0/files/98c79f78-ce18-4cf5-98f4-1e859ef3799c.jpg',
-      area: 40,
-      guests: 3,
-      features: ['Wi-Fi', 'Кондиционер', 'Телевизор', 'Минибар', 'Завтрак', 'Джакузи', 'Халаты'],
-      description: 'Элегантный номер с джакузи и панорамными окнами для особого отдыха.',
-    },
-    {
-      id: 4,
-      name: 'Семейный люкс',
-      category: 'lux',
-      price: 18000,
-      image: 'https://cdn.poehali.dev/projects/6e378c01-4a59-4b8f-b497-69d8bbb08df0/files/98c79f78-ce18-4cf5-98f4-1e859ef3799c.jpg',
-      area: 50,
-      guests: 4,
-      features: ['Wi-Fi', 'Кондиционер', 'Телевизор', 'Минибар', 'Завтрак', 'Джакузи', 'Кухня', 'Гостиная'],
-      description: 'Идеальный номер для семейного отдыха с отдельной гостиной и кухней.',
-    },
-    {
-      id: 5,
-      name: 'Президентский люкс',
-      category: 'premium',
-      price: 35000,
-      image: 'https://cdn.poehali.dev/projects/6e378c01-4a59-4b8f-b497-69d8bbb08df0/files/98c79f78-ce18-4cf5-98f4-1e859ef3799c.jpg',
-      area: 80,
-      guests: 6,
-      features: ['Wi-Fi', 'Кондиционер', 'Телевизор', 'Минибар', 'Завтрак', 'Джакузи', 'Терраса', 'Сауна', 'Кухня', 'Гостиная', 'Рабочий кабинет'],
-      description: 'Роскошный номер с террасой, сауной и эксклюзивными услугами для VIP-гостей.',
-    },
-    {
-      id: 6,
-      name: 'Пентхаус',
-      category: 'premium',
-      price: 50000,
-      image: 'https://cdn.poehali.dev/projects/6e378c01-4a59-4b8f-b497-69d8bbb08df0/files/98c79f78-ce18-4cf5-98f4-1e859ef3799c.jpg',
-      area: 120,
-      guests: 8,
-      features: ['Wi-Fi', 'Кондиционер', 'Телевизор', 'Минибар', 'Завтрак', 'Джакузи', 'Терраса', 'Сауна', 'Кухня', 'Гостиная', 'Рабочий кабинет', 'Камин', 'Бар'],
-      description: 'Эксклюзивный пентхаус на последнем этаже с панорамным видом и премиальным сервисом.',
-    },
-  ];
+  useEffect(() => {
+    const fetchRooms = async () => {
+      try {
+        setLoading(true);
+        const data = await api.getRooms(selectedCategory);
+        setRooms(data.rooms);
+      } catch (error) {
+        console.error('Failed to fetch rooms:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const filteredRooms = selectedCategory === 'all' 
-    ? rooms 
-    : rooms.filter(room => room.category === selectedCategory);
+    fetchRooms();
+  }, [selectedCategory]);
+
+  const filteredRooms = rooms;
 
   return (
     <Layout>
@@ -126,7 +74,18 @@ const Rooms = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {filteredRooms.map((room, index) => (
+            {loading ? (
+              <div className="col-span-2 text-center py-12">
+                <Icon name="Loader2" size={48} className="mx-auto animate-spin text-primary mb-4" />
+                <p className="text-muted-foreground">Загрузка номеров...</p>
+              </div>
+            ) : filteredRooms.length === 0 ? (
+              <div className="col-span-2 text-center py-12">
+                <Icon name="BedDouble" size={48} className="mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">Номера не найдены</p>
+              </div>
+            ) : (
+              filteredRooms.map((room, index) => (
               <Card 
                 key={room.id} 
                 className="overflow-hidden hover:shadow-2xl transition-all animate-fade-in" 
@@ -188,7 +147,8 @@ const Rooms = () => {
                   </CardContent>
                 </div>
               </Card>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </section>
